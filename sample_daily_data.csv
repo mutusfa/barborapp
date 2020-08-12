@@ -1,0 +1,14 @@
+﻿customer_id,order_id,order_type,order_date,order_city,order_shop,order_source,order_revenue,order_size,order_cost,order_profit,order_packaging_fee,discount_active,discount_amount,address_id,payment_source,days_since_last_order,first_order_active,dt
+c5471942-4291-4c63-9c43-40baf812c47e,111,Returned,1/2/2019,Vilnius,shop1,AndroidApp,84.55,15,66.79,17.76,2.99,1,2.11,3621,Swedbank,-1,1,20190102
+c5471942-4291-4c63-9c43-40baf812c47e,112,Delivered,1/5/2019,Vilnius,shop1,Web,32.33,12,25.54,6.79,2.99,0,0,6509,MoQ,1,0,20190105
+ded50c08-aff8-479f-9493-136f1f19641f,113,Delivered,1/5/2019,Vilnius,shop2,AndroidApp,21.45,10,16.95,4.50,2.99,1,1.65,86260,SEB,105,0,20190105
+ded50c08-aff8-479f-9493-136f1f19641f,114,Delivered,1/6/2019,Vilnius,shop2,Web,823.45,56,650.53,172.92,0,1,15.52,64271,PaymentCard,1,0,20190106
+ded50c08-aff8-479f-9493-136f1f19641f,115,Delivered,1/7/2019,Vilnius,shop2,Web,745.95,50,589.30,156.65,0,1,12.45,43713,CashOnDelivery,1,0,20190107
+ded50c08-aff8-479f-9493-136f1f19641f,116,Delivered,1/8/2019,Vilnius,shop2,Web,1020.50,89,806.20,214.31,0,1,2.14,88223,CardOnDelivery,1,0,20190108
+f8d05766-79f3-47bb-87f7-ea282886da48,117,Delivered,1/11/2019,Vilnius,shop3,Web,12.45,2,9.84,2.61,2.99,1,0.54,48573,Swedbank,52,0,20190111
+96ca1473-d946-4928-b1f5-bb1e6a131351,118,Delivered,1/12/2019,Vilnius,shop4,Web,56.42,4,44.57,11.85,2.99,1,2.11,53529,Swedbank,23,0,20190112
+96ca1473-d946-4928-b1f5-bb1e6a131351,119,Delivered,1/13/2019,Vilnius,shop4,Web,45.88,8,36.25,9.63,2.99,1,3.45,67225,Swedbank,1,0,20190113
+e86c9306-50c1-4bc7-9410-93edb788480f,120,Delivered,1/14/2019,Vilnius,shop1,iOSApp,78.96,15,62.38,16.58,2.99,1,2.55,65583,Luminor,5,0,20190114
+99820d4d-8fb8-4e1b-b944-31e9e85dc3c5,121,Delivered,1/15/2019,Vilnius,shop2,Web,41.56,9,32.83,8.73,2.99,1,1.11,73363,Luminor,45,0,20190115
+99820d4d-8fb8-4e1b-b944-31e9e85dc3c5,122,Delivered,1/16/2019,Vilnius,shop2,Web,45.02,6,35.57,9.45,2.99,1,12.11,89346,Luminor,1,0,20190116
+99820d4d-8fb8-4e1b-b944-31e9e85dc3c5,123,Delivered,1/17/2019,Vilnius,shop3,Web,58.71,15,46.38,12.33,2.99,1,5.66,27099,Luminor,1,0,20190117
