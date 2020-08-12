@@ -1,0 +1,1 @@
+from barborapp.main import *
