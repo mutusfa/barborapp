@@ -24,20 +24,15 @@ def mode(
 # ==============================================================================
 
 
-def get_order_count_by_type(dataframe: DataFrame) -> DataFrame:
-    return (
-        dataframe.groupby(["customer_id"])
-        .pivot("order_type")
-        .count()
-        .drop("order_type")
-    )
+def get_order_count_by_type(grouped_data: GroupedData) -> DataFrame:
+    return grouped_data.pivot("order_type").count().drop("order_type")
 
 
 # ===============================================================================
 
 
-def get_order_size_avg(dataframe: DataFrame) -> DataFrame:
-    return dataframe.groupBy("customer_id").agg(
+def get_order_size_avg(grouped_data: GroupedData) -> DataFrame:
+    return grouped_data.agg(
         F.mean("order_size").cast("int").alias("order_size_avg")
     )
 
