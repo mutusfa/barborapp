@@ -46,12 +46,6 @@ def cast_columns(
     return dataframe
 
 
-def to_dates(dataframe: DataFrame, date_col: str = "dt") -> DataFrame:
-    return dataframe.select(
-        date_col, F.to_date(date_col, "yyyyMMdd").alias("date"),
-    )
-
-
 def load_data(
     spark: SparkSession, file_path: str = "sample_daily_data.csv"
 ) -> DataFrame:
