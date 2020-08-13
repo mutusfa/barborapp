@@ -20,19 +20,6 @@ LOG = logging.getLogger(__name__)
 # Utils ========================================================================
 
 
-def cast_columns(
-    dataframe: DataFrame, columns: List[str], type_: Union[DataType, str]
-) -> DataFrame:
-    for col_name in columns:
-        try:
-            dataframe = dataframe.withColumn(
-                col_name, F.col(col_name).cast(type_)
-            )
-        except AnalysisException:
-            LOG.warning("%s column not found", col_name)
-    return dataframe
-
-
 def rename_and_fill_columns(
     df: DataFrame, rename: dict, fill_value=None, add_missing_columns=True,
 ) -> DataFrame:
@@ -50,6 +37,19 @@ def rename_and_fill_columns(
         F.col(orig).alias(new) for orig, new in rename.items()
     ]
     return df.select(select_args)
+
+
+def cast_columns(
+    dataframe: DataFrame, columns: List[str], type_: Union[DataType, str]
+) -> DataFrame:
+    for col_name in columns:
+        try:
+            dataframe = dataframe.withColumn(
+                col_name, F.col(col_name).cast(type_)
+            )
+        except AnalysisException:
+            LOG.warning("%s column not found", col_name)
+    return dataframe
 
 
 # Loading of data ==============================================================
@@ -100,24 +100,95 @@ def load_data(
 
 
 def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
+    from importlib import reload
+
+    reload(aggregates)
     grouped_data = dataframe.groupby(["customer_id", "period_start"])
     weekly_summary_df = grouped_data.count().select(
         ["customer_id", "period_start"]
     )
-    order_counts = aggregates.get_order_count_by_type(grouped_data)
-    order_counts = rename_and_fill_columns(
-        order_counts,
-        {
-            "Delivered": "order_executed_count",
-            "Placed": "order_placed_count",
-            "Returned": "order_returned_count",
-        },
-        fill_value=0,
+    scaffolding = weekly_summary_df.select("*")
+
+    avgs_to_get = [
+        "order_size",
+        "order_revenue",
+        "discount_amount",
+        "order_delivery_fee",
+        "order_packaging_fee",
+    ]
+    avgs = {}
+    for column in avgs_to_get:
+        try:
+            avgs[column] = aggregates.get_avg(
+                grouped_data, column, cast_type=AMOUNT_TYPE
+            )
+        except AnalysisException:
+            avgs[column] = scaffolding.withColumn(column, F.lit(0))
+    for column, df in avgs.items():
+        weekly_summary_df = weekly_summary_df.join(
+            df, ["customer_id", "period_start"]
+        )
+
+    sums_to_get = ["order_revenue", "order_profit"]
+    sums = {}
+    for column in sums_to_get:
+        try:
+            sums[column] = aggregates.get_sum(
+                grouped_data, column, cast_type=AMOUNT_TYPE
+            )
+        except AnalysisException:
+            sums[column] = scaffolding.withColumn(column, F.lit(0))
+    for column, df in sums.items():
+        weekly_summary_df = weekly_summary_df.join(
+            df, ["customer_id", "period_start"]
+        )
+
+    counts_by_order_type = aggregates.get_count_by_order_type(grouped_data)
+    weekly_summary_df.join(
+        counts_by_order_type, ["customer_id", "period_start"]
     )
-    order_counts.show()
-    weekly_summary_df = weekly_summary_df.join(
-        order_counts,
-        (weekly_summary_df.customer_id == order_counts.customer_id)
-        & (weekly_summary_df.period_start == order_counts.period_start),
-    )
+
+    avgs_to_get_by_order_type = ["order_revenue", "order_profit"]
+    avgs_by_order_type = {
+        column: aggregates.get_avg_by_order_type(grouped_data, column)
+        for column in avgs_to_get_by_order_type
+    }
+    for column, df in avgs_by_order_type.items():
+        avgs_by_order_type[column] = rename_and_fill_columns(
+            df,
+            {
+                "Delivered": f"{column}_executed_avg",
+                "Placed": f"{column}_placed_avg",
+                "Returned": f"{column}_returned_avg",
+            },
+            fill_value=0,
+        )
+    for column, df in avgs_by_order_type.items():
+        weekly_summary_df = weekly_summary_df.join(
+            df, ["customer_id", "period_start"]
+        )
+
+    # Assuming description for order_size_*_sum in task is incorrect and instead
+    # of amounts, numbers of products ordered are wanted
+
+    sums_to_get_by_order_type = ["order_size"]
+    sums_by_order_type = {
+        column: aggregates.get_sum_by_order_type(grouped_data, column)
+        for column in sums_to_get_by_order_type
+    }
+    for column, df in sums_by_order_type.items():
+        sums_by_order_type[column] = rename_and_fill_columns(
+            df,
+            {
+                "Delivered": f"{column}_executed_sum",
+                "Placed": f"{column}_placed_sum",
+                "Returned": f"{column}_returned_sum",
+            },
+            fill_value=0,
+        )
+    for column, df in sums_by_order_type.items():
+        weekly_summary_df = weekly_summary_df.join(
+            df, ["customer_id", "period_start"]
+        )
+
     return weekly_summary_df
