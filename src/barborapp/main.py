@@ -170,7 +170,6 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
 
     # Assuming description for order_size_*_sum in task is incorrect and instead
     # of amounts, numbers of products ordered are wanted
-
     sums_to_get_by_order_type = ["order_size"]
     sums_by_order_type = {
         column: aggregates.get_sum_by_order_type(grouped_data, column)
@@ -190,5 +189,35 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
         weekly_summary_df = weekly_summary_df.join(
             df, ["customer_id", "period_start"]
         )
+
+    discount_active = aggregates.get_discount_active(grouped_data)
+    weekly_summary_df = weekly_summary_df.join(
+        discount_active, ["customer_id", "period_start"]
+    )
+
+    last_address = aggregates.get_last_address(grouped_data)
+    weekly_summary_df = weekly_summary_df.join(
+        last_address, ["customer_id", "period_start"]
+    )
+
+    top_address = aggregates.mode(
+        dataframe,
+        aggregate_by=["customer_id", "period_start"],
+        column="address_id",
+        alias="top_address",
+    )
+    weekly_summary_df = weekly_summary_df.join(
+        top_address, ["customer_id", "period_start"]
+    )
+
+    payment_source_top = aggregates.mode(
+        dataframe,
+        aggregate_by=["customer_id", "period_start"],
+        column="order_source",
+        alias="payment_source_top",
+    )
+    weekly_summary_df = weekly_summary_df.join(
+        payment_source_top, ["customer_id", "period_start"]
+    )
 
     return weekly_summary_df

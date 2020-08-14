@@ -3,26 +3,24 @@ from typing import Union
 from pyspark.sql import DataFrame, GroupedData
 import pyspark.sql.functions as F
 from pyspark.sql.types import DataType, StringType
-from pyspark.sql.utils import AnalysisException
-
-from barborapp.typing import AMOUNT_TYPE
 
 
 # Utils ========================================================================
 
-
+# I haven't found a way to find most repeating value in column if data is
+# pregrouped
 def mode(
-    dataframe: DataFrame, group_by: str, mode_of: str, alias: str = None
+    dataframe: DataFrame, aggregate_by: list, column: str, alias: str = None
 ) -> DataFrame:
     """Credits to bjack3 https://stackoverflow.com/a/36695251"""
-    alias = alias or f"mode({mode_of})"
-    counts = dataframe.groupBy([group_by, mode_of]).count().alias("counts")
+    alias = alias or f"mode({column})"
+    counts = dataframe.groupBy(aggregate_by + [column]).count().alias("counts")
     results = (
-        counts.groupBy(group_by)
-        .agg(F.max(F.struct(F.col("count"), F.col(mode_of))).alias("mode"))
-        .select(group_by, f"mode.{mode_of}")
+        counts.groupBy(aggregate_by)
+        .agg(F.max(F.struct(F.col("count"), F.col(column))).alias("mode"))
+        .select(*aggregate_by, f"mode.{column}")
     )
-    return results.withColumnRenamed(mode_of, alias)
+    return results.withColumnRenamed(column, alias)
 
 
 # ==============================================================================
@@ -70,41 +68,35 @@ def get_sum_by_order_type(grouped_data, column: str,) -> DataFrame:
     return grouped_data.pivot("order_type").sum(column).drop("order_type")
 
 
-def get_discount_active(dataframe: DataFrame) -> DataFrame:
-    return (
-        dataframe.filter(lambda x: x.discount_active > 0)
-        .groupby("customer_id")
-        .count()
+# ==============================================================================
+
+
+def get_discount_active(grouped_data: GroupedData) -> DataFrame:
+    return grouped_data.agg(
+        F.sum("discount_active")
+        .cast("boolean")  # force values of 0 and 1
+        .cast("integer")
+        .alias("discount_active")
     )
 
 
 # Addresses ====================================================================
 
 
-def get_last_address(dataframe: DataFrame) -> DataFrame:
-    return dataframe.groupby("customer_id").agg(
-        F.last("address_id").alias("last_address")
-    )
+def get_last_address(grouped_data: GroupedData) -> DataFrame:
+    return grouped_data.agg(F.last("address_id").alias("last_address"))
 
 
 def get_top_address(dataframe: DataFrame) -> DataFrame:
+    print("Hello there")
+    dataframe.agg(F.count("address_id")).show()
+    print("Sad pace")
+    return
     return mode(
         dataframe,
         group_by="customer_id",
         mode_of="address_id",
         alias="top_address",
-    )
-
-
-# ==============================================================================
-
-
-def get_payment_source_top(dataframe: DataFrame) -> DataFrame:
-    return mode(
-        dataframe,
-        group_by="customer_id",
-        mode_of="payment_source",
-        alias="payment_source_top",
     )
 
 
