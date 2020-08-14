@@ -251,3 +251,20 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
     )
 
     return weekly_summary_df
+
+
+# Main =========================================================================
+
+
+def logic_main(spark: SparkSession):
+    orders = load_data(spark)
+    weekly_summary = get_weekly_aggregates(orders)
+    weekly_summary.show()
+
+
+if __name__ == "__main__":
+    LOG = logging.getLogger("barborapp")
+    spark = (
+        SparkSession.builder.master("local").appName("barborapp").getOrCreate()
+    )
+    logic_main(spark)
