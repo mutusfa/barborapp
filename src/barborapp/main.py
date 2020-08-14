@@ -113,9 +113,6 @@ def load_data(
 
 
 def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
-    from importlib import reload
-
-    reload(aggregates)
     grouped_data = dataframe.groupby(["customer_id", "period_start"])
     weekly_summary_df = grouped_data.count().select(
         ["customer_id", "period_start"]
@@ -247,6 +244,10 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
     )
     weekly_summary_df = weekly_summary_df.join(
         order_count_with_packaging_fee, ["customer_id", "period_start"]
+    )
+
+    weekly_summary_df = weekly_summary_df.withColumnRenamed(
+        "period_start", "dt"
     )
 
     return weekly_summary_df
