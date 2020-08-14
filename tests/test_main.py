@@ -1,6 +1,7 @@
 import unittest
 
-from pyspark.sql.types import StringType
+import pyspark.sql.functions as F
+from pyspark.sql.types import DateType, StringType
 
 import barborapp.main
 
@@ -19,6 +20,41 @@ class TestPeriodStart(unittest.TestCase):
 
     def test_last_year_friday(self):
         self.assertEqual(barborapp.main._period_start("20190628"), "20190624")
+
+
+class TestCastColumns(PySparkTestCase):
+    def test_string_to_date(self):
+        # given
+        inv_dt = ["2018-09-{:02d}".format(x) for x in range(1, 31)]
+        df = self.spark.createDataFrame(inv_dt, StringType()).withColumnRenamed(
+            "value", "inv_dt"
+        )
+        self.assertListEqual(df.dtypes, [("inv_dt", "string")])
+
+        # when
+        df = barborapp.main.cast_columns(
+            df, ["inv_dt"], fill_value=None, type_=DateType()
+        )
+
+        # then
+        self.assertListEqual((df.dtypes), [("inv_dt", "date")])
+
+    def test_string_to_int_with_missing_columns(self):
+        # given
+        inv = [str(x) for x in range(1, 31)]
+        df = self.spark.createDataFrame(inv, StringType()).withColumnRenamed(
+            "value", "inv"
+        )
+        self.assertListEqual(df.dtypes, [("inv", "string")])
+
+        # when
+        df = barborapp.main.cast_columns(
+            df, ["inv", "missing"], fill_value=0, type_="integer"
+        )
+
+        # then
+        self.assertListEqual((df.dtypes), [("inv", "int"), ("missing", "int")])
+        self.assertEqual(df.agg(F.sum("missing")).first()[0], 0)
 
 
 class TestLoadData(PySparkTestCase):
