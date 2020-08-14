@@ -26,16 +26,6 @@ def mode(
 # ==============================================================================
 
 
-def get_count(
-    grouped_data,
-    column: str,
-    alias: str = None,
-    cast_type: Union[DataType, str] = StringType,
-) -> DataFrame:
-    alias = alias or f"{column}_count"
-    return grouped_data.agg(F.count(column).cast(cast_type).alias(alias))
-
-
 def get_sum(
     grouped_data,
     column: str,

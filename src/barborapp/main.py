@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-from typing import List, Union
+from typing import Dict, Iterable, List, Union
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
@@ -20,15 +20,29 @@ LOG = logging.getLogger(__name__)
 # Utils ========================================================================
 
 
+def _add_missing_columns(
+    df: DataFrame,
+    target_columns: Iterable[str],
+    fill_value,
+    type_: Union[DataType, str],
+):
+    for column in target_columns:
+        try:
+            df[column]  # just to raise an exception if column doesn't exist
+        except AnalysisException:
+            df = df.withColumn(column, F.lit(fill_value).cast(type_))
+    return df
+
+
 def rename_and_fill_columns(
-    df: DataFrame, rename: dict, fill_value=None, add_missing_columns=True,
+    df: DataFrame,
+    rename: Dict[str, str],
+    fill_value=None,
+    add_missing_columns=True,
+    type_: Union[DataType, str] = None,
 ) -> DataFrame:
     if add_missing_columns:
-        for column in rename:
-            try:
-                df[column]  # just to raise an exception if column doesn't exist
-            except AnalysisException:
-                df = df.withColumn(column, F.lit(fill_value))
+        df = _add_missing_columns(df, rename.keys(), fill_value, type_)
     df = df.na.fill(fill_value)
     columns_to_keep = [
         col_name for col_name in df.columns if col_name not in rename
@@ -40,15 +54,14 @@ def rename_and_fill_columns(
 
 
 def cast_columns(
-    dataframe: DataFrame, columns: List[str], type_: Union[DataType, str]
+    dataframe: DataFrame,
+    columns: List[str],
+    fill_value,
+    type_: Union[DataType, str],
 ) -> DataFrame:
+    dataframe = _add_missing_columns(dataframe, columns, fill_value, type_)
     for col_name in columns:
-        try:
-            dataframe = dataframe.withColumn(
-                col_name, F.col(col_name).cast(type_)
-            )
-        except AnalysisException:
-            LOG.warning("%s column not found", col_name)
+        dataframe = dataframe.withColumn(col_name, F.col(col_name).cast(type_))
     return dataframe
 
 
@@ -83,7 +96,7 @@ def load_data(
         "order_delivery_fee",
         "discount_amount",
     ]
-    df = cast_columns(df, amount_column_names, AMOUNT_TYPE)
+    df = cast_columns(df, amount_column_names, 0, AMOUNT_TYPE)
     int_columns = [
         "order_size",
         "discount_active",
@@ -91,7 +104,7 @@ def load_data(
         "days_since_last_order",
         "first_order_active",
     ]
-    df = cast_columns(df, int_columns, "integer")
+    df = cast_columns(df, int_columns, 0, "integer")
     df = add_periods(df, "dt")
     return df
 
@@ -162,6 +175,7 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
                 "Returned": f"{column}_returned_avg",
             },
             fill_value=0,
+            type_=AMOUNT_TYPE,
         )
     for column, df in avgs_by_order_type.items():
         weekly_summary_df = weekly_summary_df.join(
@@ -184,6 +198,7 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
                 "Returned": f"{column}_returned_sum",
             },
             fill_value=0,
+            type_=AMOUNT_TYPE,
         )
     for column, df in sums_by_order_type.items():
         weekly_summary_df = weekly_summary_df.join(
@@ -219,5 +234,15 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
     weekly_summary_df = weekly_summary_df.join(
         payment_source_top, ["customer_id", "period_start"]
     )
+
+    orders_with_delivery_fee = dataframe.filter(
+        dataframe.order_delivery_fee > 0
+    )
+    grouped_orders_with_delivery_fee = orders_with_delivery_fee.groupby(
+        ["customer_id", "period_start"]
+    )
+
+    order_count_with_delivery_fee = grouped_orders_with_delivery_fee.count()
+    order_count_with_delivery_fee.show()
 
     return weekly_summary_df
