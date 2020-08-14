@@ -77,33 +77,20 @@ def get_last_address(grouped_data: GroupedData) -> DataFrame:
     return grouped_data.agg(F.last("address_id").alias("last_address"))
 
 
-def get_top_address(dataframe: DataFrame) -> DataFrame:
-    print("Hello there")
-    dataframe.agg(F.count("address_id")).show()
-    print("Sad pace")
-    return
-    return mode(
-        dataframe,
-        group_by="customer_id",
-        mode_of="address_id",
-        alias="top_address",
-    )
-
-
 # Fees =========================================================================
 
 
-def get_order_count_with_delivery_fee(dataframe: DataFrame) -> DataFrame:
-    return (
-        dataframe.filter(dataframe.delivery_fee > 0)
-        .groupby("customer_id")
-        .count()
+def get_order_count_with_delivery_fee(grouped_data: GroupedData) -> DataFrame:
+    return grouped_data.agg(
+        F.count(F.when(F.col("order_delivery_fee") > 0, 1)).alias(
+            "order_count_w_delivery_fee"
+        )
     )
 
 
-def get_order_count_with_packaging_fee(dataframe: DataFrame) -> DataFrame:
-    return (
-        dataframe.filter(dataframe.packaging_fee > 0)
-        .groupby("customer_id")
-        .count()
+def get_order_count_with_packaging_fee(grouped_data: GroupedData) -> DataFrame:
+    return grouped_data.agg(
+        F.count(F.when(F.col("order_packaging_fee") > 0, 1)).alias(
+            "order_count_w_packaging_fee"
+        )
     )

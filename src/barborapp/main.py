@@ -235,14 +235,18 @@ def get_weekly_aggregates(dataframe: DataFrame) -> DataFrame:
         payment_source_top, ["customer_id", "period_start"]
     )
 
-    orders_with_delivery_fee = dataframe.filter(
-        dataframe.order_delivery_fee > 0
+    order_count_with_delivery_fee = aggregates.get_order_count_with_delivery_fee(
+        grouped_data
     )
-    grouped_orders_with_delivery_fee = orders_with_delivery_fee.groupby(
-        ["customer_id", "period_start"]
+    weekly_summary_df = weekly_summary_df.join(
+        order_count_with_delivery_fee, ["customer_id", "period_start"]
     )
 
-    order_count_with_delivery_fee = grouped_orders_with_delivery_fee.count()
-    order_count_with_delivery_fee.show()
+    order_count_with_packaging_fee = aggregates.get_order_count_with_packaging_fee(
+        grouped_data
+    )
+    weekly_summary_df = weekly_summary_df.join(
+        order_count_with_packaging_fee, ["customer_id", "period_start"]
+    )
 
     return weekly_summary_df
