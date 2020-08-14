@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name="barborapp",
@@ -9,4 +9,5 @@ setup(
     author="Julius Juodagalvis",
     author_email="juodagalvis@protonmail.com",
     package_dir={"": "src"},
+    setup_requires=["pyspark", "nose"],
 )

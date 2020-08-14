@@ -7,9 +7,6 @@ verify_ssl = true
 ipython = "*"
 
 [packages]
-pyspark = "*"
-nose = "*"
-pandas = "*"
 barborapp = {editable = true, path = "."}
 
 [requires]
