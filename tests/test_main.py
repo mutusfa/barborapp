@@ -13,6 +13,14 @@ class TestSetupConfig(unittest.TestCase):
         self.assertTrue(1)
 
 
+class TestPeriodStart(unittest.TestCase):
+    def test_monday(self):
+        self.assertEqual(barborapp.main._period_start("20200810"), "20200810")
+
+    def test_last_year_friday(self):
+        self.assertEqual(barborapp.main._period_start("20190628"), "20190624")
+
+
 class TestLoadData(PySparkTestCase):
     def test_with_sample_csv_data(self):
         data = barborapp.main.load_data(self.spark)
