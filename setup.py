@@ -9,5 +9,6 @@ setup(
     author="Julius Juodagalvis",
     author_email="juodagalvis@protonmail.com",
     package_dir={"": "src"},
-    setup_requires=["pyspark", "nose"],
+    setup_requires=["pyspark", "nose2"],
+    test_suite="nose2.collector.collector",
 )
